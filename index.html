@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -52,10 +52,10 @@ if ("serviceWorker" in navigator) {
 
 <h2>👨‍👩‍👧 Avec qui ?</h2>
 <div class="choices" id="profiles">
-<button class="choice selected" data-value="Famille">👨‍👩‍👦 Famille</button>
-<button class="choice" data-value="Couple">❤️ Couple</button>
-<button class="choice" data-value="Solo">👤 Solo</button>
-<button class="choice" data-value="Amis">👫 Amis</button>
+<button type="button" class="choice selected" data-value="Famille">👨‍👩‍👦 Famille</button>
+<button type="button" class="choice" data-value="Couple">❤️ Couple</button>
+<button type="button" class="choice" data-value="Solo">👤 Solo</button>
+<button type="button" class="choice" data-value="Amis">👫 Amis</button>
 </div>
 
 <h2>💰 Ton budget maximum</h2>
@@ -64,19 +64,19 @@ if ("serviceWorker" in navigator) {
 
 <h2>🎯 Choisis une catégorie</h2>
 <div class="choices" id="activities">
-<button class="choice selected" data-value="Restaurants">🍽️ Restaurants</button>
-<button class="choice" data-value="Activités">🎳 Activités</button>
-<button class="choice" data-value="Sorties">🎬 Sorties</button>
-<button class="choice" data-value="Découverte">🌳 Découverte</button>
-<button class="choice" data-value="Maison">🏠 À la maison</button>
-<button class="choice" data-value="Gratuit">🆓 Gratuit</button>
+<button type="button" class="choice selected" data-value="Restaurants">🍽️ Restaurants</button>
+<button type="button" class="choice" data-value="Activités">🎳 Activités</button>
+<button type="button" class="choice" data-value="Sorties">🎬 Sorties</button>
+<button type="button" class="choice" data-value="Découverte">🌳 Découverte</button>
+<button type="button" class="choice" data-value="Maison">🏠 À la maison</button>
+<button type="button" class="choice" data-value="Gratuit">🆓 Gratuit</button>
 </div>
 
 <h2>🔎 Précise ton envie (facultatif)</h2>
 <select id="subcategory"><option value="Tout">Tout me proposer</option></select>
 
-<button class="find" onclick="findPlan()">TROUVER MON PLAN ✨</button>
-<button class="surprise" onclick="surprisePlan()">🎲 SURPRISE-MOI !</button>
+<button type="button" class="find" onclick="findPlan()">TROUVER MON PLAN ✨</button>
+<button type="button" class="surprise" onclick="surprisePlan()">🎲 SURPRISE-MOI !</button>
 <div id="results"></div>
 
 <h2>❤️ Mes favoris</h2>
@@ -176,7 +176,6 @@ function updateSubcategories(){
   option.value=idea[3];option.textContent=idea[0];select.appendChild(option);
  });
 }
-updateSubcategories();
 
 function getFavorites(){
  try{return JSON.parse(localStorage.getItem("plansFavoris"))||[];}catch(e){return [];}
@@ -185,13 +184,16 @@ function saveFavorite(name,price,category){
  let favorites=getFavorites();
  if(!favorites.some(f=>f.name===name)){
   favorites.push({name,price,category});
-  localStorage.setItem("plansFavoris",JSON.stringify(favorites));
+  try{localStorage.setItem("plansFavoris",JSON.stringify(favorites));}
+  catch(e){alert("Impossible d'enregistrer ce favori sur cet appareil.");}
  }
  showFavorites();
 }
 function removeFavorite(index){
  let favorites=getFavorites();favorites.splice(index,1);
- localStorage.setItem("plansFavoris",JSON.stringify(favorites));showFavorites();
+ try{localStorage.setItem("plansFavoris",JSON.stringify(favorites));}
+ catch(e){alert("Impossible de mettre à jour les favoris.");}
+ showFavorites();
 }
 function showFavorites(){
  const box=document.getElementById("favorites"),favorites=getFavorites();
@@ -201,7 +203,7 @@ function showFavorites(){
   const card=document.createElement("div");card.className="result";
   const title=document.createElement("h3");title.textContent="❤️ "+f.name;
   const p=document.createElement("p");p.textContent="Budget estimé : "+f.price+" € · "+(f.category||"");
-  const del=document.createElement("button");del.className="remove";del.textContent="Retirer";del.onclick=()=>removeFavorite(i);
+  const del=document.createElement("button");del.type="button";del.className="remove";del.textContent="Retirer";del.onclick=()=>removeFavorite(i);
   card.append(title,p,del);box.appendChild(card);
  });
 }
@@ -210,16 +212,24 @@ function showResults(matching,city,day,profile,budget,category){
  const heading=document.createElement("h2");heading.textContent="✨ Tes idées"+(city?" pour "+city:"");
  const info=document.createElement("p");info.textContent=day+" · "+profile+" · Budget max : "+budget+" € · "+category;
  box.append(heading,info);
- if(!matching.length){box.innerHTML+="<p>Aucune idée trouvée avec ce budget. Essaie d'augmenter le budget ou de changer de catégorie.</p>";return;}
+ if(!matching.length){
+  const empty=document.createElement("p");
+  empty.textContent="Aucune idée trouvée avec ce budget. Essaie d'augmenter le budget ou de changer de catégorie.";
+  box.appendChild(empty);return;
+ }
  matching.forEach(idea=>{
   const card=document.createElement("div");card.className="result";
   const title=document.createElement("h3");title.textContent=idea[0];
   const desc=document.createElement("p");desc.textContent=idea[1];
   const price=document.createElement("p");price.className="price";price.textContent="Budget estimé : "+idea[2]+" €";
   const actions=document.createElement("div");actions.className="actions";
-  const fav=document.createElement("button");fav.className="favorite";fav.textContent="❤️ Favori";fav.onclick=()=>saveFavorite(idea[0],idea[2],category);
-  const maps=document.createElement("button");maps.className="maps";maps.textContent="📍 Chercher autour de moi";
-  maps.onclick=()=>{let query=encodeURIComponent(idea[3]+" "+(city||"près de moi"));window.open("https://www.google.com/maps/search/?api=1&query="+query,"_blank");};
+  const fav=document.createElement("button");fav.type="button";fav.className="favorite";fav.textContent="❤️ Favori";fav.onclick=()=>saveFavorite(idea[0],idea[2],category);
+  const maps=document.createElement("button");maps.type="button";maps.className="maps";maps.textContent="📍 Chercher autour de moi";
+  maps.onclick=()=>{
+   const place=city||"près de moi";
+   const query=encodeURIComponent(idea[3]+" "+place);
+   window.open("https://www.google.com/maps/search/?api=1&query="+query,"_blank","noopener");
+  };
   actions.append(fav,maps);card.append(title,desc,price,actions);box.appendChild(card);
  });
 }
@@ -230,7 +240,7 @@ function findPlan(){
  const category=document.querySelector("#activities .selected").dataset.value;
  const sub=document.getElementById("subcategory").value;
  const budget=Number(money.value);
- let matching=ideas[category].filter(idea=>idea[2]<=budget&&(sub==="Tout"||idea[3]===sub));
+ const matching=ideas[category].filter(idea=>idea[2]<=budget&&(sub==="Tout"||idea[3]===sub));
  showResults(matching,city,day,profile,budget,category);
 }
 function surprisePlan(){
@@ -238,8 +248,9 @@ function surprisePlan(){
  const day=document.getElementById("day").value;
  const profile=document.querySelector("#profiles .selected").dataset.value;
  const budget=Number(money.value);
- const category=document.querySelector("#activities .selected").dataset.value;
- const affordable=Object.entries(ideas).flatMap(([cat,list])=>list.filter(i=>i[2]<=budget).map(i=>({...idea:i,cat})));
+ const affordable=Object.entries(ideas).flatMap(([cat,list])=>
+  list.filter(item=>item[2]<=budget).map(item=>({idea:item,cat}))
+ );
  if(!affordable.length){showResults([],city,day,profile,budget,"Surprise");return;}
  const picked=affordable[Math.floor(Math.random()*affordable.length)];
  showResults([picked.idea],city,day,profile,budget,"Surprise : "+picked.cat);
