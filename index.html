@@ -1,1 +1,250 @@
-diego62630-lab.github.io/trouve-ton-plan/
+!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#164e3b">
+<title>Trouve ton plan</title>
+<link rel="manifest" href="./manifest.json">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f7f2;color:#183b2d}
+header{background:#164e3b;color:white;padding:28px 20px;border-radius:0 0 25px 25px}
+header h1{margin:0;font-size:27px}header p{color:#d7eadc}
+main{max-width:600px;margin:auto;padding:18px}
+h2{font-size:19px;margin-top:24px}
+input,select{width:100%;padding:14px;border:1px solid #d5ded5;border-radius:12px;background:white;font-size:16px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choice{padding:15px 8px;background:white;border:2px solid transparent;border-radius:14px;font-size:15px;cursor:pointer}
+.choice.selected{border-color:#23834d;background:#e4f4e8}
+#budget{font-size:25px;font-weight:bold}
+input[type=range]{accent-color:#23834d;padding:0}
+.find,.surprise{width:100%;padding:16px;margin-top:12px;color:white;border:0;border-radius:14px;font-size:17px;font-weight:bold;cursor:pointer}
+.find{background:#23834d}.surprise{background:#e18a26}
+.result{background:white;border-radius:15px;padding:18px;margin:12px 0;box-shadow:0 2px 8px #0000000c}
+.result h3{margin-top:0}.price{color:#23834d;font-weight:bold}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.favorite,.maps,.remove{border:0;padding:10px;border-radius:9px;margin-top:8px;cursor:pointer}
+.favorite{background:#e4f4e8}.maps{background:#e9efff;color:#24467c}.remove{background:#ffe8e8;color:#8a2525}
+.small{color:#718174;font-size:13px}
+footer{text-align:center;padding:25px;color:#718174;font-size:13px}
+</style>
+</head>
+<body>
+<script>
+if ("serviceWorker" in navigator) {
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(console.log));
+}
+</script>
+<header>
+<h1>🌿 TROUVE TON PLAN</h1>
+<p>Des idées pour profiter sans se ruiner !</p>
+</header>
+<main>
+<h2>📍 Dans quelle ville ?</h2>
+<input id="city" type="text" placeholder="Exemple : Boulogne-sur-Mer">
+
+<h2>📅 Quel jour ?</h2>
+<select id="day">
+<option>Aujourd'hui</option><option>Demain</option><option>Ce week-end</option>
+<option>Samedi</option><option>Dimanche</option><option>Pendant les vacances</option>
+</select>
+
+<h2>👨‍👩‍👧 Avec qui ?</h2>
+<div class="choices" id="profiles">
+<button class="choice selected" data-value="Famille">👨‍👩‍👦 Famille</button>
+<button class="choice" data-value="Couple">❤️ Couple</button>
+<button class="choice" data-value="Solo">👤 Solo</button>
+<button class="choice" data-value="Amis">👫 Amis</button>
+</div>
+
+<h2>💰 Ton budget maximum</h2>
+<div id="budget">30 €</div>
+<input type="range" id="money" min="0" max="200" step="5" value="30">
+
+<h2>🎯 Choisis une catégorie</h2>
+<div class="choices" id="activities">
+<button class="choice selected" data-value="Restaurants">🍽️ Restaurants</button>
+<button class="choice" data-value="Activités">🎳 Activités</button>
+<button class="choice" data-value="Sorties">🎬 Sorties</button>
+<button class="choice" data-value="Découverte">🌳 Découverte</button>
+<button class="choice" data-value="Maison">🏠 À la maison</button>
+<button class="choice" data-value="Gratuit">🆓 Gratuit</button>
+</div>
+
+<h2>🔎 Précise ton envie (facultatif)</h2>
+<select id="subcategory"><option value="Tout">Tout me proposer</option></select>
+
+<button class="find" onclick="findPlan()">TROUVER MON PLAN ✨</button>
+<button class="surprise" onclick="surprisePlan()">🎲 SURPRISE-MOI !</button>
+<div id="results"></div>
+
+<h2>❤️ Mes favoris</h2>
+<div id="favorites"><p>Tu n'as pas encore de favoris.</p></div>
+</main>
+<footer>TROUVE TON PLAN © 2026<br>Profite de la vie, maîtrise ton budget !</footer>
+
+<script>
+const ideas={
+"Restaurants":[
+["Restaurant","Un restaurant pour se faire plaisir.",35,"Restaurant"],
+["Pizzeria","Pizza sur place ou à emporter.",20,"Pizzeria"],
+["Fast-food","Un repas rapide et gourmand.",15,"Fast-food"],
+["Kebab","Un kebab ou sandwich.",12,"Kebab"],
+["Buffet à volonté","Profite d'un buffet varié.",30,"Buffet"],
+["Cuisine du monde","Découvre une cuisine étrangère.",30,"Cuisine du monde"],
+["Crêperie","Crêpes salées ou sucrées.",20,"Crêperie"],
+["Brasserie","Un repas dans une brasserie.",25,"Brasserie"],
+["Café gourmand","Un café et une douceur.",10,"Café"],
+["Restaurant romantique","Un dîner en amoureux.",50,"Restaurant romantique"]
+],
+"Activités":[
+["Bowling","Défie tes amis ou ta famille.",25,"Bowling"],
+["Karting","Fais la course sur circuit.",45,"Karting"],
+["Escape game","Résous des énigmes en équipe.",35,"Escape game"],
+["Laser game","Affronte tes adversaires.",20,"Laser game"],
+["Trampoline park","Saute et défoule-toi.",20,"Trampoline"],
+["Billard","Une partie entre amis.",15,"Billard"],
+["Paintball","Une bataille pleine d'action.",35,"Paintball"],
+["Mini-golf","Une activité amusante pour tous.",15,"Mini-golf"],
+["Accrobranche","Aventure dans les arbres.",30,"Accrobranche"],
+["Parc de loisirs","Une journée pleine d'attractions.",45,"Parc de loisirs"],
+["Piscine","Va nager et te détendre.",10,"Piscine"],
+["Jeux d'arcade","Retrouve les jeux d'arcade.",15,"Arcade"]
+],
+"Sorties":[
+["Cinéma","Va voir un film à l'affiche.",18,"Cinéma"],
+["Concert","Découvre un concert près de chez toi.",50,"Concert"],
+["Spectacle","Humour, théâtre ou spectacle.",40,"Spectacle"],
+["Bar","Prends un verre dans un endroit sympa.",20,"Bar"],
+["Karaoké","Chante tes chansons préférées.",25,"Karaoké"],
+["Discothèque","Sors danser et faire la fête.",30,"Discothèque"],
+["Marché","Promène-toi dans un marché local.",0,"Marché"],
+["Événement local","Découvre les événements du coin.",0,"Événement"]
+],
+"Découverte":[
+["Balade dans un parc","Promenade au grand air.",0,"Parc"],
+["Plage","Profite du bord de mer.",0,"Plage"],
+["Randonnée","Explore les chemins alentours.",0,"Randonnée"],
+["Visite culturelle","Découvre le patrimoine local.",12,"Musée"],
+["Lieu insolite","Cherche un endroit original.",0,"Lieu insolite"],
+["Point de vue","Admire un beau paysage.",0,"Point de vue"],
+["Sortie vélo","Une balade à vélo.",0,"Piste cyclable"],
+["Visite touristique","Redécouvre ta ville.",0,"Tourisme"]
+],
+"Maison":[
+["Soirée cinéma","Film et pop-corn.",5,"Soirée cinéma"],
+["Atelier cuisine","Prépare une nouvelle recette.",15,"Atelier cuisine"],
+["Jeux de société","Organise un tournoi.",0,"Jeux de société"],
+["Jeux vidéo","Défi gaming entre vous.",0,"Jeux vidéo"],
+["Atelier créatif","Dessine, bricole ou crée.",5,"Atelier créatif"],
+["Soirée quiz","Teste vos connaissances.",0,"Quiz"],
+["Dégustation maison","Prépare une dégustation.",15,"Dégustation"],
+["Karaoké maison","Chante à la maison.",0,"Karaoké"]
+],
+"Gratuit":[
+["Balade","Pars te promener.",0,"Balade"],
+["Plage","Profite de la plage gratuitement.",0,"Plage"],
+["Randonnée","Découvre un sentier.",0,"Randonnée"],
+["Pique-nique","Prépare un pique-nique maison.",0,"Pique-nique"],
+["Visite d'un quartier","Explore un quartier inconnu.",0,"Visite"],
+["Photo challenge","Fais un défi photo.",0,"Photographie"],
+["Jeux en plein air","Organise des jeux dehors.",0,"Jeux plein air"],
+["Coucher de soleil","Admire le coucher du soleil.",0,"Coucher de soleil"]
+]
+};
+
+const money=document.getElementById("money");
+money.addEventListener("input",()=>document.getElementById("budget").textContent=money.value+" €");
+
+document.querySelectorAll(".choices").forEach(group=>{
+ group.querySelectorAll(".choice").forEach(button=>{
+  button.addEventListener("click",()=>{
+   group.querySelectorAll(".choice").forEach(b=>b.classList.remove("selected"));
+   button.classList.add("selected");
+   if(group.id==="activities") updateSubcategories();
+  });
+ });
+});
+
+function updateSubcategories(){
+ const category=document.querySelector("#activities .selected").dataset.value;
+ const select=document.getElementById("subcategory");
+ select.innerHTML='<option value="Tout">Tout me proposer</option>';
+ (ideas[category]||[]).forEach(idea=>{
+  const option=document.createElement("option");
+  option.value=idea[3];option.textContent=idea[0];select.appendChild(option);
+ });
+}
+updateSubcategories();
+
+function getFavorites(){
+ try{return JSON.parse(localStorage.getItem("plansFavoris"))||[];}catch(e){return [];}
+}
+function saveFavorite(name,price,category){
+ let favorites=getFavorites();
+ if(!favorites.some(f=>f.name===name)){
+  favorites.push({name,price,category});
+  localStorage.setItem("plansFavoris",JSON.stringify(favorites));
+ }
+ showFavorites();
+}
+function removeFavorite(index){
+ let favorites=getFavorites();favorites.splice(index,1);
+ localStorage.setItem("plansFavoris",JSON.stringify(favorites));showFavorites();
+}
+function showFavorites(){
+ const box=document.getElementById("favorites"),favorites=getFavorites();
+ if(!favorites.length){box.innerHTML="<p>Tu n'as pas encore de favoris.</p>";return;}
+ box.innerHTML="";
+ favorites.forEach((f,i)=>{
+  const card=document.createElement("div");card.className="result";
+  const title=document.createElement("h3");title.textContent="❤️ "+f.name;
+  const p=document.createElement("p");p.textContent="Budget estimé : "+f.price+" € · "+(f.category||"");
+  const del=document.createElement("button");del.className="remove";del.textContent="Retirer";del.onclick=()=>removeFavorite(i);
+  card.append(title,p,del);box.appendChild(card);
+ });
+}
+function showResults(matching,city,day,profile,budget,category){
+ const box=document.getElementById("results");box.innerHTML="";
+ const heading=document.createElement("h2");heading.textContent="✨ Tes idées"+(city?" pour "+city:"");
+ const info=document.createElement("p");info.textContent=day+" · "+profile+" · Budget max : "+budget+" € · "+category;
+ box.append(heading,info);
+ if(!matching.length){box.innerHTML+="<p>Aucune idée trouvée avec ce budget. Essaie d'augmenter le budget ou de changer de catégorie.</p>";return;}
+ matching.forEach(idea=>{
+  const card=document.createElement("div");card.className="result";
+  const title=document.createElement("h3");title.textContent=idea[0];
+  const desc=document.createElement("p");desc.textContent=idea[1];
+  const price=document.createElement("p");price.className="price";price.textContent="Budget estimé : "+idea[2]+" €";
+  const actions=document.createElement("div");actions.className="actions";
+  const fav=document.createElement("button");fav.className="favorite";fav.textContent="❤️ Favori";fav.onclick=()=>saveFavorite(idea[0],idea[2],category);
+  const maps=document.createElement("button");maps.className="maps";maps.textContent="📍 Chercher autour de moi";
+  maps.onclick=()=>{let query=encodeURIComponent(idea[3]+" "+(city||"près de moi"));window.open("https://www.google.com/maps/search/?api=1&query="+query,"_blank");};
+  actions.append(fav,maps);card.append(title,desc,price,actions);box.appendChild(card);
+ });
+}
+function findPlan(){
+ const city=document.getElementById("city").value.trim();
+ const day=document.getElementById("day").value;
+ const profile=document.querySelector("#profiles .selected").dataset.value;
+ const category=document.querySelector("#activities .selected").dataset.value;
+ const sub=document.getElementById("subcategory").value;
+ const budget=Number(money.value);
+ let matching=ideas[category].filter(idea=>idea[2]<=budget&&(sub==="Tout"||idea[3]===sub));
+ showResults(matching,city,day,profile,budget,category);
+}
+function surprisePlan(){
+ const city=document.getElementById("city").value.trim();
+ const day=document.getElementById("day").value;
+ const profile=document.querySelector("#profiles .selected").dataset.value;
+ const budget=Number(money.value);
+ const category=document.querySelector("#activities .selected").dataset.value;
+ const affordable=Object.entries(ideas).flatMap(([cat,list])=>list.filter(i=>i[2]<=budget).map(i=>({...idea:i,cat})));
+ if(!affordable.length){showResults([],city,day,profile,budget,"Surprise");return;}
+ const picked=affordable[Math.floor(Math.random()*affordable.length)];
+ showResults([picked.idea],city,day,profile,budget,"Surprise : "+picked.cat);
+}
+showFavorites();
+</script>
+</body>
+</html>
